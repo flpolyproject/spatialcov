@@ -1,5 +1,6 @@
 # spatialcov
 spatial coverage
+
 The goal of the spatial coverage project is to take a set of routes for a series of autonomous vehicles with on board sensors, and create a new set of routes for those vehicles with an increased diversity of routes taken while still having the same starting and ending points. This will increase the time spent making measurements with the sensors, and also increase the diversity of the sensing data obtained.
 
 The first requirement is to create a random series of vehicle routes that adhere to real world expectations. For instance, back roads should have little traffic, while highways and intersections should have a greater density of vehicles traveling on them.
