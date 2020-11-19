@@ -64,9 +64,48 @@ class EnvironmentListener(traci.StepListener):
 
 		logging.info(f"RUNNING ALGO {algo} simulation {sim_number}")
 
+
+		self.topleft = []
+		self.topright = []
+		self.bottomleft = []
+		self.bottomright =[]
+
+
+		point1tl = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].y))
+		point1tr = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].y))
+		point1bl = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[1]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[1]].y))
+		point1br = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[3]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[3]].y))
+
+
+		for key, value in self.sim_env.map_data.junctions.items():
+		#for item in junction_list:
+			point2 = np.array((value.x, value.y))
+
+			distance_topleft = np.linalg.norm(point1tl - point2) 
+			distance_topright = np.linalg.norm(point1tr - point2) 
+			distance_bottomleft = np.linalg.norm(point1bl - point2) 
+			distance_bottomright = np.linalg.norm(point1br - point2) 
+
+			#print(f"{key} {distance_topright} {distance_topleft} {distance_bottomright} {distance_bottomleft}")
+
+			if distance_topright <= self.GraphSetting.radiusrefer:
+				self.topright.append(key)
+			if distance_topleft <= self.GraphSetting.radiusrefer:
+				self.topleft.append(key)
+			if distance_bottomright <= self.GraphSetting.radiusrefer:
+				self.bottomright.append(key)
+			if distance_bottomleft <= self.GraphSetting.radiusrefer:
+				self.bottomleft.append(key)
+
+
+
+
 		if init:
 			self.initial_reward_random(self.GraphSetting.reward_numbers)
 			self.initial_route_random(self.GraphSetting.car_numbers)
+
+
+
 
 
 		self.junction_sub()
@@ -98,95 +137,72 @@ class EnvironmentListener(traci.StepListener):
 		logging.info(f"Initializing routes for {self.algo} sim {self.sim_number}")
 
 
-		if (not self.main_env) or self.new_players:
+
+		self.route_dict = {}
+		self.veh_dict = {}
 
 
-
-			if self.new_players:
-
-				print("IM RESETTING THE DATA CAPTUER")
-				self.sim_env.post_process_graph = DataCaptureGraph()
-				self.sim_env.post_process_graph.reward_list =  self.sim_env.map_data.pois
-
-			self.route_dict = {}
-			self.veh_dict = {}
+		list_juncts = list(self.sim_env.map_data.junctions)
 
 
-			list_edges = list(self.sim_env.map_data.edges)
-			list_juncts = list(self.sim_env.map_data.junctions)
-
-
-			for i in range(amount):
-				veh_id = 'veh_'+str(i)
-				route_id = 'route_'+str(i)
-				
-				while True:
-					try:
-						start = choice(list_juncts)
-						end = self.GraphSetting.destination
-						if self.GraphSetting.destination == "random":
-							end = choice(list_juncts)
-
-						if start == end:
-							continue
-
-						route = self.sim_env.map_data.find_best_route(start, end)
-
-						if not route.edges:
-							continue
-
-
-						break
-					except traci.exceptions.TraCIException:
-						continue
-					except Exception as e:
-						logging.debug(f"Failed addinv vehicle {veh_id}")
-						continue
-				route_edges = route.edges
-
+		for i in range(amount):
+			veh_id = 'veh_'+str(i)
+			route_id = 'route_'+str(i)
+			
+			while True:
 				try:
+					start = choice(list_juncts)
+					end = self.GraphSetting.destination
+					if self.GraphSetting.destination == "random":
+						end = choice(list_juncts)
 
-					traci.route.add(route_id, route_edges)
-					traci.vehicle.add(veh_id, route_id,departLane='random')
+					if start == end:
+						continue
+
+					route = self.sim_env.map_data.find_best_route(start, end)
+
+					if not route.edges:
+						continue
 
 
-					self.route_dict[route_id] = route_edges
-					self.veh_dict[veh_id] = route_id
-
+					break
 				except traci.exceptions.TraCIException:
-					assert True, f"FAILED TO ADD ROUTE {veh_id}, edges:{route_edges}"
+					continue
+				except Exception as e:
+					logging.debug(f"Failed addinv vehicle {veh_id}")
+					continue
+			route_edges = route.edges
+
+			try:
+
+				traci.route.add(route_id, route_edges)
+				traci.vehicle.add(veh_id, route_id,departLane='random')
+
+
+				self.route_dict[route_id] = route_edges
+				self.veh_dict[veh_id] = route_id
+
+			except traci.exceptions.TraCIException:
+				assert True, f"FAILED TO ADD ROUTE {veh_id}, edges:{route_edges}"
 
 
 
-				self.sim_env.add_player(veh_id, route, end)
-				
+			self.sim_env.add_player(veh_id, route, end)
+			
 
-			#after all vehicles added
-			#if self.sim_env.algo == "ATNE":
+		#after all vehicles added
+		#if self.sim_env.algo == "ATNE":
 
-			if self.sim_env.algo != "BASE":
-				self.sim_env.set_combinations(add=True) #initially set vehicle destination
-			#self.sim_env.set_combinations_new(add=True)
-			#combination is called after all players are added
+		if self.sim_env.algo != "BASE":
+			self.sim_env.set_combinations(add=True) #initially set vehicle destination
+		#self.sim_env.set_combinations_new(add=True)
+		#combination is called after all players are added
 
-			logging.info(f"Players added total {amount} in inital no mainenv")
+		logging.info(f"Players added total {amount} in inital no mainenv")
 
-			self.global_player_list = copy.deepcopy(self.sim_env.player_list)
+		self.global_player_list = copy.deepcopy(self.sim_env.player_list)
 
-		else:
-			logging.info("adding players in replay simulation")
-
-			for veh_id, route_id in self.main_env.veh_dict.items():
-				try:
-
-					traci.route.add(route_id, self.main_env.route_dict[route_id])
-					traci.vehicle.add(veh_id, route_id,departLane='random')
-
-				except traci.exceptions.TraCIException:
-					assert True, f"FAILED TO ADD ROUTE {veh_id}, {self.main_env.route_dict[route_id]}"
-
-			self.sim_env.player_list = copy.deepcopy(self.main_env.global_player_list)
-
+		
 
 
 
@@ -362,15 +378,18 @@ class BaseEnv(EnvironmentListener):
 	def __init__(self, sim_number, init=True, _seed=None, setting_obj=None, main_env=None, algo="BASE", post_process_graph=None, new_players=False):
 		super(BaseEnv, self).__init__(sim_number, init=init, _seed =_seed, setting_obj=setting_obj, algo=algo, main_env=main_env, post_process_graph=post_process_graph, new_players=new_players)
 
+		
+
+
 
 	def step(self, t=0):
 		#action performed after each step aka simulation step
 
 		self.vehicle_sub() #constant sub to veh to handle veh being added during simulation
 		self.break_condition = self.populate_post() #for populating post processing data, and set break condition to get when all vehicle arrives
-		self.sim_env.process_poi(self.t)
+		#self.sim_env.process_poi(self.t)
 		self.sim_env.process_destination() #subscribe to destination of veh to make sure it arrives
-		self.sim_env.stop_vehicle_handle(self.t)
+		#self.sim_env.stop_vehicle_handle(self.t)
 		self.t+=1
 
 class GreedyEnv(EnvironmentListener):

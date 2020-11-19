@@ -19,6 +19,11 @@ class Visualize(object):
 			self.current_zoom = self.default_zoom
 			self.none_tick = 0
 			self.draw_poi()
+
+			for center in self.step_object.GraphSetting.refer:
+				center_point = (self.step_object.sim_env.map_data.junctions[center].x, self.step_object.sim_env.map_data.junctions[center].y)
+				self.circle(center_point, self.step_object.GraphSetting.radiusrefer, (255, 0, 0))
+
 		except Exception as e:
 			pass
 		

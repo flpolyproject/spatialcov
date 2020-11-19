@@ -114,15 +114,15 @@ class Settings(object):
 class GraphSetting(Settings):
 	def __init__(self):
 
-		self.car_numbers = 150 #150
+		self.car_numbers = 10 #150
 		self.reward_numbers= 0 #poi change
 		#destination='5761000259' #london
 		#destination = "gneJ49" #grid4
 		#destination = "random"#"cell0_2"
 
 		self.theta_random = 120 #200
-		self.destination='cell0_2'
 		self.destination = "5761000259"
+		#self.destination='cell0_2'
 		self.distance_capacity = [7,7]#he limit the player can travel within the. 2 to 3 times the cost from start to end 
 		#this multipliar can be determined based on how far the veh is to their destination. the rate of reduction is changed as veh is approaching their destination
 		#this gas capacity takes priority over the utility and sensing plan, means if we have capacity left the vehicle still wont collect
@@ -146,6 +146,10 @@ class GraphSetting(Settings):
 		self.none_repeat_poi = False #if true then no poi can be repeated usually False
 
 		self.current_running_algo = None
+		self.refer = ["6548029263", "37878246", "288167137", "104277486"] #top left, bottom left, top right, bottom right
+		self.radiusrefer = 1000
+		self.startindex = [3]
+		self.endindex = [0,1,2]
 
 
 

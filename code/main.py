@@ -17,7 +17,6 @@ import pandas as pd
 import copy
 
 import traceback
-import sys
 
 
 def start_simulation(Env, sim_number, gui=False, _seed=None, setting_obj=None, dir_name=None, main_env=None, new_players=False):

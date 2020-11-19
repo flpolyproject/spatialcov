@@ -77,6 +77,8 @@ class Map(object):
 		self.pois = {} #poi value as key, poi object as object
 
 
+
+
 		if self.grid:
 			if not self.simple_grid: #simple grid is for visualization to find ne
 				#self.sumo_cfg = Settings.gui_sumo_config
@@ -121,6 +123,8 @@ class Map(object):
 			junct_id = item.attributes['id'].value
 			self.junctions[junct_id] = Junctions((float(item.attributes['x'].value), float(item.attributes['y'].value)), item.attributes['id'].value)
 
+			
+
 
 		for item in edge_list:
 			#self.edges[item.attributes['id'].value] = Edge(item.attributes['from'].value, item.attributes['to'].value, float(item.attributes['speed'].value), self.calculate_distance(item.attributes['from'].value, item.attributes['to'].value))
@@ -132,6 +136,9 @@ class Map(object):
 			self.junctions[item.attributes['from'].value].adjacent_edges_to.append(item.attributes['id'].value) #takes edge and append it to adjacent edge list of from node
 			self.junctions[item.attributes['to'].value].adjacent_edges_from.append(item.attributes['id'].value)
 			self.junctions[item.attributes['from'].value].adjacent_junctions.append(item.attributes['to'].value)
+
+		
+
 
 		print(f"PARSE MAP COMPLETED {len(edge_list)} Edges and {len(junction_list)} Junctions")
 
