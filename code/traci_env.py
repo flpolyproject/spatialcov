@@ -69,6 +69,7 @@ class EnvironmentListener(traci.StepListener):
 		self.topright = []
 		self.bottomleft = []
 		self.bottomright =[]
+		self.total_list = []
 
 
 		point1tl = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].y))
@@ -96,6 +97,14 @@ class EnvironmentListener(traci.StepListener):
 				self.bottomright.append(key)
 			if distance_bottomleft <= self.GraphSetting.radiusrefer:
 				self.bottomleft.append(key)
+
+
+		self.total_list.append(self.topleft)
+		self.total_list.append(self.bottomleft)
+		self.total_list.append(self.topright)
+		self.total_list.append(self.bottomright)
+
+
 
 
 
@@ -142,6 +151,16 @@ class EnvironmentListener(traci.StepListener):
 		self.veh_dict = {}
 
 
+
+		start_junct_list = []
+		for x in self.GraphSetting.startindex:
+			start_junct_list.extend(self.total_list[x])
+
+		end_junct_list = []
+		for x in self.GraphSetting.endindex:
+			end_junct_list.extend(self.total_list[x])
+
+
 		list_juncts = list(self.sim_env.map_data.junctions)
 
 
@@ -151,8 +170,9 @@ class EnvironmentListener(traci.StepListener):
 			
 			while True:
 				try:
-					start = choice(list_juncts)
-					end = self.GraphSetting.destination
+					start = choice(start_junct_list)
+					end = choice(end_junct_list)
+					#end = self.GraphSetting.destination
 					if self.GraphSetting.destination == "random":
 						end = choice(list_juncts)
 
@@ -309,10 +329,11 @@ class EnvironmentListener(traci.StepListener):
 			for veh_id, values in self.sim_env.veh_data.items():
 
 				post_list = [self.sim_number, self.t, veh_id, values[tc.VAR_ROAD_ID], values[tc.VAR_SPEED], \
-				self.sim_env.player_list[veh_id].capacity, self.sim_env.player_list[veh_id].reward, self.sim_env.player_list[veh_id].prev_poi, self.sim_env.algo\
-				]
+				self.sim_env.player_list[veh_id].capacity, self.sim_env.player_list[veh_id].reward, self.sim_env.player_list[veh_id].prev_poi, self.sim_env.algo]
 
 				self.sim_env.player_list[veh_id].node_hit.append(values[tc.VAR_ROAD_ID])
+				self.sim_env.player_list[veh_id].positions.append(values[tc.VAR_POSITION])
+				#print(f"{veh_id} - {values[tc.VAR_POSITION]}")
 
 				self.post_process.append_row(post_list)
 

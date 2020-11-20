@@ -61,6 +61,7 @@ class Player(object):
 		self.base_travel_time = None
 
 		self.pois_visited = {}
+		self.positions = []
 		
 
 
@@ -108,6 +109,8 @@ class GridPlayer(object):
 		self.false_positive = 0 # didnt expect to collect, but collected
 		self.true_positive = 0 #expected to collect and collected
 		self.false_negative = 0 #didnt expect to collect and didnt collect
+
+
 
 		
 

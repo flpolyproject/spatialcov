@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import json
 from operator import attrgetter
 import pickle
-import os, glob
+import os, glob,sys
 from settings import Settings
 import pandas as pd
 from scipy import stats
@@ -22,9 +22,11 @@ from collections import defaultdict
 
 
 
+import seaborn as sns
 
+sys.path.append("./../frechetdistance")
 
-import seaborn as sns;
+from fdist import find_fdist
 
 #the esp can be computed using old sensing plan formula
 
@@ -822,6 +824,8 @@ def plot_others(folder, plot_values = "reward", y_axis="ru", box_plot=None, avg_
 
     plt.show()
 
+
+
 def plot_others_graph(folder, plot_values = "reward", y_axis="ru", box_plot=None, avg_player=False, to_csv=False, horizontal=False, scatter=False, tTest=False, normalize=False, error_bar=False, save=False, combine_graph=False, ylim=None, xlim=None):
     #reward values can be either reward or stm
     '''
@@ -1554,6 +1558,35 @@ def plot_time_series(folder, plot_values = "sim", y_axis="rc"):
 
         df = pd.DataFrame(df_list, columns=['algo',  'sim_number', 'step',y_axis])
 
+    elif y_axis == "spatial":
+
+        for group in divided_list:
+
+            base_rc = None
+            base_ru = None
+
+            for i, single_file in enumerate(group):
+
+                print("procssing ", os.path.basename(single_file))
+                obj = MultiCapture('test').pickle_load(single_file, directory=False) 
+                #print(obj.simulation_list[0].rc_visited_instance)
+
+
+                #print("temp coverage ", obj.simulation_list[0].get_avg_temp_coverage())
+                for i, sim_number in enumerate(obj.simulation_list):
+                    
+
+                    algo = sim_number.setting.current_running_algo
+                    algo = algo.lower()
+                    if algo == "atne":
+                        algo = "ours"
+
+                    sim_number.compute_spatial_coverage()
+                    
+
+
+        df = pd.DataFrame(df_list, columns=['algo',  'sim_number', 'step',y_axis])
+
 
 
 
@@ -1599,6 +1632,32 @@ class DataCaptureGraph(DataCapture): #object per simulation
         self.rc_visited_instance = {} #step, 
         self.rw_visited_instance = {}
         self.temp_coverage = defaultdict(list) #poi:[]
+
+    def compute_spatial_coverage(self, custom_player_list=None):
+        total_path = []
+
+        if custom_player_list:
+            temp_player_list = custom_player_list
+        else:
+            temp_player_list = self.player_list
+        for player in self.player_list:
+            player_array = []
+            for position in player.positions:
+                player_array.append(list(position))
+                #total_path.append(player.positions)
+
+            player_array_np = np.unique(np.around(np.array(player_array)), axis=0)
+
+            total_path.append(player_array_np)
+        print("path loaded...")
+        print(np.array(total_path).shape)
+        print(np.array(total_path)[0][0])
+        #print(total_path[1])
+        find_fdist(total_path[:5])
+
+        #print(np.array(total_path))
+
+
 
 
 
@@ -1694,6 +1753,8 @@ if __name__== "__main__":
     if args.option == "json":
         obj = MultiCapture('test').pickle_load(os.path.join(Settings.sim_save_path, 'json_folder'), directory=True, json_format=True) # for converting json
     elif args.option == "plot":
+
+
         
         #plot_sub(os.path.join(Settings.sim_save_path, "inc_cap_gr_new"), capacity_change=True, box_plot=False, player_change=False, average_distance=False, weight_dict=None, algo_amount=2, normalize=False, ru_value=False, rc_value=True, rw_value=False, directory=True)
         #plot_sd(os.path.join(Settings.sim_save_path_graph, 'inc_sd_test6'), y_axis="step_ratio")
@@ -1706,9 +1767,9 @@ if __name__== "__main__":
 
 
 
-        plot_others_graph(os.path.join(Settings.sim_save_path_graph, "inc_player_more"), plot_values="player", y_axis="rw", box_plot=None, avg_player=False, horizontal=False, scatter=False, tTest=False, error_bar=False, save=True, normalize=False, combine_graph=False, ylim=None)
+        #plot_others_graph(os.path.join(Settings.sim_save_path_graph, "inc_player_more"), plot_values="player", y_axis="rw", box_plot=None, avg_player=False, horizontal=False, scatter=False, tTest=False, error_bar=False, save=True, normalize=False, combine_graph=False, ylim=None)
 
-        #plot_time_series(os.path.join(Settings.sim_save_path_graph, "fiftest"), y_axis="rw")
+        plot_time_series(os.path.join(Settings.sim_save_path_graph, "spatialtest"), y_axis="spatial")
 
 
 

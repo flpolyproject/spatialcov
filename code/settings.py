@@ -114,7 +114,7 @@ class Settings(object):
 class GraphSetting(Settings):
 	def __init__(self):
 
-		self.car_numbers = 10 #150
+		self.car_numbers = 150 #150
 		self.reward_numbers= 0 #poi change
 		#destination='5761000259' #london
 		#destination = "gneJ49" #grid4
@@ -149,7 +149,7 @@ class GraphSetting(Settings):
 		self.refer = ["6548029263", "37878246", "288167137", "104277486"] #top left, bottom left, top right, bottom right
 		self.radiusrefer = 1000
 		self.startindex = [3]
-		self.endindex = [0,1,2]
+		self.endindex = [0,1,2] + [0]*7
 
 
 

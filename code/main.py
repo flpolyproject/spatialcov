@@ -313,7 +313,7 @@ def inc_buffer_poi(start, end, inc, dir_name):
 		run(gui=gui, number=3, Env=RandomEnv, setting_obj = mySetting, file_title=f"{mySetting.buffer_interval}_RANDOM", dir_name = dir_name, main_env=main_env)
 
 def runbase(dir_name):
-	gui = True
+	gui = False
 	main_env = None
 	mySetting = GraphSetting()
 	run(gui=gui, number=1, Env=BaseEnv, setting_obj = mySetting, file_title=f"{mySetting.car_numbers}_BASE", dir_name = dir_name, main_env=main_env)
