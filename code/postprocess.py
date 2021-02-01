@@ -1472,7 +1472,7 @@ def generate_weighted_graph(sumo_cfg):
 
 
 
-def plot_time_series(folder, plot_values = "sim", y_axis="rc"):
+def plot_time_series(folder, plot_values = "sim", y_axis="rc", heatmap=False):
 
     order = ["base", "greedy", "gta", "random"]
     label_order = ["BaseLine", "Greedy", "ATNE", "Random"]
@@ -1488,6 +1488,7 @@ def plot_time_series(folder, plot_values = "sim", y_axis="rc"):
 
 
     print(divided_list)
+
 
 
 
@@ -1560,6 +1561,8 @@ def plot_time_series(folder, plot_values = "sim", y_axis="rc"):
 
     elif y_axis == "spatial":
 
+
+
         for group in divided_list:
 
             base_rc = None
@@ -1581,7 +1584,7 @@ def plot_time_series(folder, plot_values = "sim", y_axis="rc"):
                     if algo == "atne":
                         algo = "ours"
 
-                    sim_number.compute_spatial_coverage()
+                    sim_number.compute_spatial_coverage(heatmap=heatmap)
                     
 
 
@@ -1633,7 +1636,7 @@ class DataCaptureGraph(DataCapture): #object per simulation
         self.rw_visited_instance = {}
         self.temp_coverage = defaultdict(list) #poi:[]
 
-    def compute_spatial_coverage(self, custom_player_list=None):
+    def compute_spatial_coverage(self, custom_player_list=None, sample_rate = 100, heatmap=False):
         total_path = []
 
         if custom_player_list:
@@ -1642,8 +1645,9 @@ class DataCaptureGraph(DataCapture): #object per simulation
             temp_player_list = self.player_list
         for player in self.player_list:
             player_array = []
-            for position in player.positions:
-                player_array.append(list(position))
+            for i, position in enumerate(player.positions):
+                if i%sample_rate == 0:
+                    player_array.append(list(position))
                 #total_path.append(player.positions)
 
             player_array_np = np.unique(np.around(np.array(player_array)), axis=0)
@@ -1653,7 +1657,10 @@ class DataCaptureGraph(DataCapture): #object per simulation
         print(np.array(total_path).shape)
         print(np.array(total_path)[0][0])
         #print(total_path[1])
-        find_fdist(total_path[:5])
+        #find_fdist(total_path[:5])
+        find_fdist(np.random.choice(total_path, 3), save=True)
+        if heatmap:
+            exit()
 
         #print(np.array(total_path))
 
@@ -1769,7 +1776,7 @@ if __name__== "__main__":
 
         #plot_others_graph(os.path.join(Settings.sim_save_path_graph, "inc_player_more"), plot_values="player", y_axis="rw", box_plot=None, avg_player=False, horizontal=False, scatter=False, tTest=False, error_bar=False, save=True, normalize=False, combine_graph=False, ylim=None)
 
-        plot_time_series(os.path.join(Settings.sim_save_path_graph, "spatialtest"), y_axis="spatial")
+        plot_time_series(os.path.join(Settings.sim_save_path_graph, "spatialtest"), y_axis="spatial",heatmap=True)
 
 
 
