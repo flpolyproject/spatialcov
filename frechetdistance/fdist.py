@@ -1,12 +1,14 @@
 import numpy as np 
 import similaritymeasures as sm 
 import matplotlib.pyplot as plt 
-
+import os, glob, sys
+import pandas as pd
+import seaborn as sns
 
 #creating 2D Brownian walks 
 
 
-def find_fdist(paths):
+def find_fdist(paths, save=False, show=False):
 	 
 
 	N = len(paths)
@@ -18,7 +20,9 @@ def find_fdist(paths):
 			
 	#compute diversities 
 	diversities = np.zeros(N)
-	alpha = 0.5
+	#alpha = 0.5
+	alpha = 5 / np.max(fd[:])
+	print("alpha value is ", alpha)
 	for i in range(N):
 		diversity = 0
 		for j in range(N):
@@ -29,13 +33,17 @@ def find_fdist(paths):
 		
 	print("Diversity  Array is ", diversities)
 
-	#print(np.array(paths).shape)
+
 
 	for i in range(len(paths)):
 		plt.plot(paths[i][:,0], paths[i][:,1],label=str(i))
-
+		#ax = sns.heatmap(df)
 	plt.legend()
-	plt.show()
+	if show:
+		plt.show()
+	if save:
+		plt.savefig(os.path.join("./", f'{"heatmap"}.eps'), dpi=300)
+		plt.savefig(os.path.join("./", f'{"heatmap"}.png'))
 
 
 

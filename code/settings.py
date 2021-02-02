@@ -146,10 +146,11 @@ class GraphSetting(Settings):
 		self.none_repeat_poi = False #if true then no poi can be repeated usually False
 
 		self.current_running_algo = None
-		self.refer = ["6548029263", "37878246", "288167137", "104277486"] #top left, bottom left, top right, bottom right
+		#self.refer = ["6548029263", "37878246", "288167137", "104277486"] #top left, bottom left, top right, bottom right
+		self.refer = ["6548029263", "37878246", "104277486"] #top left, bottom left, top right, bottom right
 		self.radiusrefer = 1000
-		self.startindex = [3]
-		self.endindex = [0,1,2] + [0]*7
+		self.startindex = [2]
+		self.endindex = [0,1] + [0]*8
 
 
 

@@ -1657,8 +1657,12 @@ class DataCaptureGraph(DataCapture): #object per simulation
         print(np.array(total_path).shape)
         print(np.array(total_path)[0][0])
         #print(total_path[1])
-        find_fdist(total_path[:5])
-        #find_fdist(np.random.choice(total_path, 3), save=False, show=False)
+        del total_path[6]
+        del total_path[8]
+        del total_path[11]
+        find_fdist(total_path[:15])
+
+        #find_fdist(np.random.choice(total_path, 10), save=False, show=False)
         if heatmap:
             return total_path 
 
@@ -1776,7 +1780,7 @@ if __name__== "__main__":
 
         #plot_others_graph(os.path.join(Settings.sim_save_path_graph, "inc_player_more"), plot_values="player", y_axis="rw", box_plot=None, avg_player=False, horizontal=False, scatter=False, tTest=False, error_bar=False, save=True, normalize=False, combine_graph=False, ylim=None)
 
-        plot_time_series(os.path.join(Settings.sim_save_path_graph, "spatialtest"), y_axis="spatial",heatmap=True)
+        plot_time_series(os.path.join(Settings.sim_save_path_graph, "newtest"), y_axis="spatial",heatmap=True)
 
 
 

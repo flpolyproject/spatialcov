@@ -17,6 +17,27 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde as kde
 from matplotlib.colors import Normalize
 from matplotlib import cm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+#add all the points of the line into the array
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 N = 10000
 mean = [0,0]
@@ -45,12 +66,18 @@ def makeColours( vals ):
 
 	print("after")
 	print(norm)
-	exit()
+	#exit()
 
 	#Can put any colormap you like here.
+	#coloursb = [cm.ScalarMappable( norm=norm, cmap='jet') for val in vals]
 	colours = [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba( val ) for val in vals]
 	print(colours)
-	exit()
+
+	#divider = make_axes_locatable()
+	#cax = divider.append_axes('right', size='5%', pad=0.05)
+
+	#plt.colorbar(vals, orientation='vertical')
+	#exit()
 
 	return colours
 
@@ -84,23 +111,17 @@ paths = np.array([[obj.x, obj.y] for obj in env.sim_env.map_data.junctions.value
 
 pt = paths.T
 densObjnew = kde(pt)
-colours = makeColours( densObj.evaluate( pt ) )
+colours = makeColours( densObjnew.evaluate( pt ) )
 
-plt.scatter( pt[0], pt[1], color=colours , s=0.6, alpha=0.4)
+#plt.scatter( pt[0], pt[1], color=colours , s=0.8, alpha=1)
 
-#plt.plot(paths[:,0], paths[:,1], 'o', alpha=0.4, linestyle="", markersize=0.6)
+'''
+m = cm.ScalarMappable(cmap=cm.jet)
+m.set_array([])
+plt.colorbar(m)
+'''
+
+plt.plot(paths[:,0], paths[:,1], 'o', alpha=0.4, linestyle="", markersize=0.6)
 plt.show()
 
 
-
-'''
-flights = sns.load_dataset("flights")
-print(flights)
-flights = flights.pivot("month", "year", "passengers")
-print(flights)
-ax = sns.heatmap(flights)
-plt.show()
-
-print(flights)
-
-'''

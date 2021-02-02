@@ -79,7 +79,7 @@ class EnvironmentListener(traci.StepListener):
 		point1tl = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].y))
 		point1tr = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].y))
 		point1bl = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[1]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[1]].y))
-		point1br = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[3]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[3]].y))
+		point1br = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].y))
 
 
 		for key, value in self.sim_env.map_data.junctions.items():
@@ -105,7 +105,7 @@ class EnvironmentListener(traci.StepListener):
 
 		self.total_list.append(self.topleft)
 		self.total_list.append(self.bottomleft)
-		self.total_list.append(self.topright)
+		#self.total_list.append(self.topright)
 		self.total_list.append(self.bottomright)
 
 
@@ -153,8 +153,6 @@ class EnvironmentListener(traci.StepListener):
 
 		self.route_dict = {}
 		self.veh_dict = {}
-
-
 
 		start_junct_list = []
 		for x in self.GraphSetting.startindex:
