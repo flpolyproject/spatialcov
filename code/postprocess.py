@@ -1657,10 +1657,10 @@ class DataCaptureGraph(DataCapture): #object per simulation
         print(np.array(total_path).shape)
         print(np.array(total_path)[0][0])
         #print(total_path[1])
-        #find_fdist(total_path[:5])
-        find_fdist(np.random.choice(total_path, 3), save=True)
+        find_fdist(total_path[:5])
+        #find_fdist(np.random.choice(total_path, 3), save=False, show=False)
         if heatmap:
-            exit()
+            return total_path 
 
         #print(np.array(total_path))
 

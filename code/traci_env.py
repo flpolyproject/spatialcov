@@ -16,6 +16,7 @@ from visualize import Visualize
 import logging
 import json
 import copy
+from settings import Settings, GraphSetting
 
 from postprocess import DataCaptureGraph
 
@@ -24,9 +25,12 @@ from postprocess import DataCaptureGraph
 
 
 class EnvironmentListener(traci.StepListener):
-	def __init__(self, sim_number, init=True, _seed=None, setting_obj=None, algo="ATNE", main_env=None, post_process_graph=None, new_players=False):
+	def __init__(self, sim_number, init=True, _seed=3, setting_obj=None, algo="ATNE", main_env=None, post_process_graph=None, new_players=False):
 		super(EnvironmentListener, self).__init__()
 		seed(_seed)
+
+		if not setting_obj:
+			setting_obj = GraphSetting()
 
 		self.GraphSetting = setting_obj
 
