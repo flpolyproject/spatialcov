@@ -15,6 +15,8 @@ import math
 import numpy as np
 from graph import Graph
 from util import *
+from networkxbuild import NXSUMO
+import logging
 
 
 
@@ -75,6 +77,7 @@ class Map(object):
 		self.edges = {}
 		self.junctions = {}
 		self.pois = {} #poi value as key, poi object as object
+		self.sumonet = NXSUMO()
 
 
 
@@ -123,7 +126,7 @@ class Map(object):
 			junct_id = item.attributes['id'].value
 			self.junctions[junct_id] = Junctions((float(item.attributes['x'].value), float(item.attributes['y'].value)), item.attributes['id'].value)
 
-			
+			logging.info(junct_id)
 
 
 		for item in edge_list:
@@ -136,6 +139,8 @@ class Map(object):
 			self.junctions[item.attributes['from'].value].adjacent_edges_to.append(item.attributes['id'].value) #takes edge and append it to adjacent edge list of from node
 			self.junctions[item.attributes['to'].value].adjacent_edges_from.append(item.attributes['id'].value)
 			self.junctions[item.attributes['from'].value].adjacent_junctions.append(item.attributes['to'].value)
+
+			self.sumonet.add(item.attributes['from'].value, item.attributes['to'].value, weight=self.calculate_distance(item.attributes['from'].value, item.attributes['to'].value))
 
 		
 
@@ -179,6 +184,7 @@ class Map(object):
 			junct_id = item.attributes['id'].value
 			self.ne_mapping[i] = junct_id
 			self.junctions[junct_id] = Junctions((float(item.attributes['x'].value), float(item.attributes['y'].value)), item.attributes['id'].value)
+			logging.info(junct_id)
 
 
 			#print(junct_id)
@@ -237,6 +243,20 @@ class Map(object):
 					shortest_route = route
 
 		return shortest_route
+
+	def find_route_reroute(self, start, end_edge):
+		shortest_route = None
+		#print(self.map_data.junctions)
+		for edge in self.junctions[destination].adjacent_edges_from:
+			route = traci.simulation.findRoute(upcome_edge, edge)
+			if not shortest_route:
+				shortest_route = route
+			else:
+				if route.travelTime<shortest_route.travelTime:
+					shortest_route = route
+
+		return shortest_route
+
 
 	
 

@@ -1,16 +1,28 @@
+import heapq as hq
+from collections import defaultdict 
 import numpy as np
-import os,glob, sys
-
-def entropy_calculation(prob_arry):
-	return sum([x*np.log(1/x) for x in prob_arry])
-
-def tempo_coverage(poi_dict):
-	prob_dist_dict = {key:entropy_calculation(np.diff(value_list)/np.sum(np.diff(value_list))) for key, value_list in poi_dict.items()}
-
-	print(prob_dist_dict)
 
 
-temp_dict = {"poi1":[0, 2, 4,6,8], "poi3":[0, 2, 4,6, 8, 10, 12, 14], "poi4":[x*2 for x in range(10000000)]}
+aa = np.arange(-10,10)
+test = np.argmax(aa>5)
+print(test)
 
-tempo_coverage(temp_dict)
+test1 = np.array([[0,0], [0,0], [0,0]])
+test2 = np.array([[4328.05, 3554.37], [3583.6, 2600.05], [4208.99, 3465.83]])
 
+def angle_rowwise_v2(A, B):
+    p1 = np.einsum('ij,ij->i',A,B)
+    p2 = np.einsum('ij,ij->i',A,A)
+    p3 = np.einsum('ij,ij->i',B,B)
+    p4 = p1 / np.sqrt(p2*p3)
+    return np.arccos(np.clip(p4,-1.0,1.0))
+
+result = angle_rowwise_v2(test1,test2)
+
+print(result*180/np.pi)
+
+#i = np.where(result==np.min(result[np.nonzero(result)]))[0][0]
+#print(i)
+
+
+print("output ", np.linalg.norm(test2- test1, axis=1))

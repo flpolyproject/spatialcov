@@ -12,8 +12,8 @@ class Player(object):
 		self.routes = routes
 		self.index = veh_id.split('_')[1]
 		self.start = routes[0]
-		self.dest_junc = dest_junc
-		self.destination = routes[-1]
+		self.dest_junc = dest_junc #this junction
+		self.destination = routes[-1] #this edge
 		self.current_edge = routes[0]
 		self.capacity = 100
 		self.prev_junction = passed_junction

@@ -19,6 +19,12 @@ import copy
 from settings import Settings, GraphSetting
 
 from postprocess import DataCaptureGraph
+import sys
+
+sys.path.append("./../frechetdistance")
+
+from fdist import RouteObj
+from collections import defaultdict
 
 #env is for storing data contains map and players
 #try to keep all traci calls in here
@@ -27,7 +33,7 @@ from postprocess import DataCaptureGraph
 class EnvironmentListener(traci.StepListener):
 	def __init__(self, sim_number, init=True, _seed=3, setting_obj=None, algo="ATNE", main_env=None, post_process_graph=None, new_players=False):
 		super(EnvironmentListener, self).__init__()
-		seed(_seed)
+		#seed(_seed)
 
 		if not setting_obj:
 			setting_obj = GraphSetting()
@@ -79,7 +85,7 @@ class EnvironmentListener(traci.StepListener):
 		point1tl = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[0]].y))
 		point1tr = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].y))
 		point1bl = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[1]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[1]].y))
-		point1br = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].y))
+		point1br = np.array((self.sim_env.map_data.junctions[self.GraphSetting.refer[2]].x, self.sim_env.map_data.junctions[self.GraphSetting.refer[3]].y))
 
 
 		for key, value in self.sim_env.map_data.junctions.items():
@@ -105,7 +111,7 @@ class EnvironmentListener(traci.StepListener):
 
 		self.total_list.append(self.topleft)
 		self.total_list.append(self.bottomleft)
-		#self.total_list.append(self.topright)
+		self.total_list.append(self.topright)
 		self.total_list.append(self.bottomright)
 
 
@@ -145,7 +151,7 @@ class EnvironmentListener(traci.StepListener):
 
 		
 
-	def initial_route_random(self, amount, seed=None):
+	def initial_route_random(self, amount, return_dicts=False, min_dist=False):
 
 		logging.info(f"Initializing routes for {self.algo} sim {self.sim_number}")
 
@@ -162,55 +168,96 @@ class EnvironmentListener(traci.StepListener):
 		for x in self.GraphSetting.endindex:
 			end_junct_list.extend(self.total_list[x])
 
+		index_amount_dict = {} #the given index how many routes is needed from it
+
+		for x in set(self.GraphSetting.endindex):
+			index_amount_dict[x] = round((self.GraphSetting.endindex.count(x) / len(self.GraphSetting.endindex)) * amount)
+
+		print("number of routes to generate ", index_amount_dict)
 
 		list_juncts = list(self.sim_env.map_data.junctions)
 
+		dict_players = {}
 
-		for i in range(amount):
-			veh_id = 'veh_'+str(i)
-			route_id = 'route_'+str(i)
-			
-			while True:
+		i = 0
+
+		#min_dist_value = 0 #if we want all the routes to have similar to the min route distnace
+		route_dist_index = defaultdict(list) #{id:[dist]}
+
+		for key, route_amount in index_amount_dict.items():
+			for _ in range(route_amount):
+				veh_id = 'veh_'+str(i)
+				route_id = 'route_'+str(i)
+
+				#print(f"vehicle {i} ending index is {key}")
+				
+				while True:
+					try:
+						start = choice(start_junct_list)
+						end = choice(self.total_list[key])
+						#end = self.GraphSetting.destination
+
+						if start == end:
+							continue
+
+						route = self.sim_env.map_data.find_best_route(start, end)
+
+						if not route.edges:
+							continue
+
+						if min_dist:
+							#populate routedistindex
+							total_dist = 0
+							for edge in route.edges:
+								total_dist += self.sim_env.map_data.edges[edge]._distance
+								route_dist_index[i].append(total_dist)
+
+
+						break
+					except traci.exceptions.TraCIException:
+						continue
+					except Exception as e:
+						logging.debug(f"Failed addinv vehicle {veh_id}")
+						continue
+
+				route_edges = route.edges
+
+				dict_players[i] = route_edges
+				i += 1
+				if return_dicts:
+					continue
+
 				try:
-					start = choice(start_junct_list)
-					end = choice(end_junct_list)
-					#end = self.GraphSetting.destination
-					if self.GraphSetting.destination == "random":
-						end = choice(list_juncts)
 
-					if start == end:
-						continue
-
-					route = self.sim_env.map_data.find_best_route(start, end)
-
-					if not route.edges:
-						continue
+					traci.route.add(route_id, route_edges)
+					traci.vehicle.add(veh_id, route_id,departLane='random')
 
 
-					break
+					self.route_dict[route_id] = route_edges
+					self.veh_dict[veh_id] = route_id
+
 				except traci.exceptions.TraCIException:
-					continue
-				except Exception as e:
-					logging.debug(f"Failed addinv vehicle {veh_id}")
-					continue
-			route_edges = route.edges
-
-			try:
-
-				traci.route.add(route_id, route_edges)
-				traci.vehicle.add(veh_id, route_id,departLane='random')
-
-
-				self.route_dict[route_id] = route_edges
-				self.veh_dict[veh_id] = route_id
-
-			except traci.exceptions.TraCIException:
-				assert True, f"FAILED TO ADD ROUTE {veh_id}, edges:{route_edges}"
+					assert True, f"FAILED TO ADD ROUTE {veh_id}, edges:{route_edges}"
 
 
 
-			self.sim_env.add_player(veh_id, route, end)
-			
+				self.sim_env.add_player(veh_id, route, end)
+		
+
+		if return_dicts:
+			if min_dist:
+				#find the shortest route and make every other one the same
+				dist_dict = {key:value[-1] for key, value in route_dist_index.items()}
+				min_route_id = min(dist_dict, key=dist_dict.get)
+				print(f"Route {min_route_id} is the shortest route, with {route_dist_index[min_route_id][-1]}")
+
+				for key, value in route_dist_index.items():
+					if key == min_route_id:
+						continue
+					dict_players[key] = dict_players[key][:np.argmax(np.array(value) > route_dist_index[min_route_id][-1])]
+
+
+			return dict_players
 
 		#after all vehicles added
 		#if self.sim_env.algo == "ATNE":
