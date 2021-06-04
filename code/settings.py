@@ -154,6 +154,10 @@ class GraphSetting(Settings):
 		#self.endindex = [1,1,1] + [0]*7
 		#self.endindex = [0,0,1,1,1,1,2,2,2,2]
 		self.endindex = [0,0,0,2,2,2,2,2,2]
+		#self.endindex = [2] * 10
+		#self.startindex1 = [1]
+		#self.endindex1 = [0] * 4
+
 
 
 

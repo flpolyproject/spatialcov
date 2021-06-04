@@ -92,7 +92,7 @@ def find_junction_heatheap(heatheap, potential_dict, spatial_matrix, global_heat
 	return junction_id
 
 
-def changeRouteTest(route_dict, simnumber, vis = False, to_csv=False,heatmap_dict=None, spatial_matrix=None, global_heatheap=None,save_dir=None):
+def changeRouteTest(route_dict, simnumber, vis = False, to_csv=False,heatmap_dict=None, spatial_matrix=None, global_heatheap=None,save_dir=None, indiv_vis=False):
 	#factor multiply by the sp value result in the final distance deviation its allowed to make
 	#takes in the existing routes
 	#i need the time it takes to the specific junction
@@ -121,10 +121,10 @@ def changeRouteTest(route_dict, simnumber, vis = False, to_csv=False,heatmap_dic
 		x = np.max(junctions.T[0])
 		y = np.max(junctions.T[1])
 
-		base_matrix = np.zeros((int(x), int(y)))
-		starting_matrix = np.zeros((int(x), int(y)))
-		ending_matrix = np.zeros((int(x), int(y)))
-		derived_matrix = np.zeros((int(x), int(y)))
+		base_matrix = np.zeros((int(x)+1, int(y)+1))
+		starting_matrix = np.zeros((int(x)+1, int(y)+1))
+		ending_matrix = np.zeros((int(x) + 1, int(y)+1))
+		derived_matrix = np.zeros((int(x) + 1, int(y) + 1))
 
 
 	potential_junct_dict = {} #id:{junction:distance, junct:dist}
@@ -252,8 +252,10 @@ def changeRouteTest(route_dict, simnumber, vis = False, to_csv=False,heatmap_dic
 
 
 
-
-		assert route_from_target, f"no routes to target for id {routeobj.id} {route_from_target}"
+		if not route_from_target:
+			#means that the route to the destination from junction is empty
+			del dev_junction[routeobj.id]
+		#assert route_from_target, f"no routes to target for id {routeobj.id} {route_from_target}"
 
 		for i in itertools.zip_longest(route_to_target, route_from_target):
 			if i[0]:
@@ -320,6 +322,19 @@ def changeRouteTest(route_dict, simnumber, vis = False, to_csv=False,heatmap_dic
 		else:
 			pd.DataFrame(original_path,columns=["timestamp","veh_id","x", "y","orginal_route"]).to_csv("vehicledata.csv")
 
+	if indiv_vis:
+		plt.clf()
+		plt.scatter(junctions.T[0], junctions.T[1], alpha=0.8, s=0.8)
+		#axs[1].scatter(junctions.T[0], junctions.T[1], alpha=0.2, s=0.8)
+		for i,obj in enumerate(route_dict):
+			plt.plot(obj.pathlist.T[0], obj.pathlist.T[1], label=obj.id, linewidth=4.0)
+		print("saving....")
+		plt.savefig(f'{"base"}.png')
+		for i,obj in enumerate(route_dict):
+			plt.plot(obj.devpathlist.T[0], obj.devpathlist.T[1], label=f"{obj.id}D", linewidth=4.0)
+		plt.savefig(f'{"output"}.png')
+
+
 
 
 
@@ -368,15 +383,15 @@ def closest_node(node, nodes, slice_indexs=None, entire_array=False):
 	#return the point, the 
 	return nodes[closest_index], dist_array[0][closest_index], np.argmax(slice_indexs>closest_index), closest_index
 
-def diverse_calculation(route_dict, sampling=10,vis=False, div_routes="pathlist"):
+def diverse_calculation(route_dict, x_max=np.max(junctions.T[0]), y_max=np.max(junctions.T[1]),sampling=10,vis=False, div_routes="pathlist"):
 	#find the distance
 	#a = random.randint(1000, size=(50000, 2))
 	#some_pt = (1, 2)
 	#formulate a list of points combining all the points in the routes
 	
 
-	x = np.max(junctions.T[0])
-	y = np.max(junctions.T[1])
+	x = x_max
+	y = y_max
 
 	logging.debug(f"computing spatial coverage for {div_routes}... ")
 
@@ -402,7 +417,11 @@ def diverse_calculation(route_dict, sampling=10,vis=False, div_routes="pathlist"
 		slice_indexs.append(counter_value)
 
 
+
+
 	new_routes_np = np.array(new_routes)
+	unique_rows = np.unique(new_routes_np, axis=0)
+	
 
 
 	spatial_cov_matrix = [] #store spatial cov value distance to cloest route in here
@@ -420,7 +439,7 @@ def diverse_calculation(route_dict, sampling=10,vis=False, div_routes="pathlist"
 				else:
 					hq.heappush(heatmap_dict[path_id], (dist, (i, j)))
 				#print(f"{row} {col} distance to shortest is {dist} at point {point}")
-				total_spatial_cov += dist
+				total_spatial_cov += (dist**2)
 				if dist > max_dist:
 					if (i==0) and (j==0):
 						pass
@@ -483,7 +502,7 @@ def diverse_calculation(route_dict, sampling=10,vis=False, div_routes="pathlist"
 
 	logging.debug(f"Finished computing spatial coverage for {div_routes}... ")
 
-	return total_spatial_cov, heatmap_dict, spatial_cov_matrix_df, max_point
+	return total_spatial_cov, heatmap_dict, spatial_cov_matrix_df, max_point, unique_rows.shape[0]
 	#return int, dictionary {id:heap}, matrix 
 
 def makeColours( vals ):
@@ -554,11 +573,19 @@ def find_df():
 
 
 
-def find_non_div_route(route_dict, vis=False):
+def find_non_div_route(route_dict, simnumber, vis=False, indiv_vis=False, save_dir=None):
 	#implement the greedy approach find the total deviation made by vehicles and randomly find
 	#total_deviation = sum([factor*x.sp for x in route_dict])
 	#change_dev = total_deviation/len(route_dict)
 	logging.debug(f"Starting greedy route gneration... ")
+
+
+	if save_dir:
+		#load the numpy and update then save
+		x = np.max(junctions.T[0])
+		y = np.max(junctions.T[1])
+		derived_matrix = np.zeros((int(x) + 1, int(y) + 1))
+
 
 	dev_junction = {}
 	potential_junct_dict={}
@@ -615,6 +642,10 @@ def find_non_div_route(route_dict, vis=False):
 	for routeobj in route_dict:
 		if not routeobj.id in dev_junction:
 			routeobj.devpathlist = routeobj.pathlist
+			if save_dir:
+				int_devpath = routeobj.devpathlist.T.astype(np.int)
+				derived_matrix[int_devpath[0], int_devpath[1]] += 1
+
 			continue
 
 		from_node = env.sim_env.map_data.edges[routeobj.start]._from
@@ -645,21 +676,30 @@ def find_non_div_route(route_dict, vis=False):
 
 		routeobj.devpathlist = np.array(new_path_start + new_path_end)
 
+		if save_dir:
+			int_devpath = routeobj.devpathlist.T.astype(np.int)
+			derived_matrix[int_devpath[0], int_devpath[1]] += 1
+
+	if indiv_vis:
+		plt.clf()
+		plt.scatter(junctions.T[0], junctions.T[1], alpha=0.8, s=0.8)
+		for i,obj in enumerate(route_dict):
+			plt.plot(obj.devpathlist.T[0], obj.devpathlist.T[1], label=f"{obj.id}D", linewidth=4.0)
+		plt.savefig(f'{"greedy"}.png')
+
+	if save_dir:
+		derived_none_zeros = np.where(derived_matrix!=0)
+		derived_save = np.array([derived_none_zeros[0], derived_none_zeros[1], derived_matrix[derived_none_zeros[0], derived_none_zeros[1]]])
+		with open(os.path.join(save_dir, f"base_routes/{simnumber}_greedy.npy"), 'wb') as f:
+			np.save(f, derived_save)
+
+
+	
 
 	if vis:
-
-		
-
-
 		axs[2].scatter(junctions.T[0], junctions.T[1], alpha=0.2, s=0.8)
-
-
 		for i,obj in enumerate(route_dict):
 			axs[2].plot(obj.devpathlist.T[0], obj.devpathlist.T[1], label=f"{obj.id}D")
-
-
-
-
 
 		axs[2].legend(ncol=2)
 
@@ -697,6 +737,22 @@ def get_route_dict(initial_routes, factor_change=None):
 	return neqfunction(route_dict, factor_change=factor_change)
 
 
+def find_average_utility(route_dict):
+	glob_utility = []
+	for routeobj in route_dict:
+		glob_utility.append(routeobj.utility)
+		
+	print(glob_utility)
+
+	result = np.mean(glob_utility, axis=0)
+	print(result)
+	exit()
+
+
+
+
+
+
 def main():
 	pd_list = []
 	count=5
@@ -732,18 +788,20 @@ def main_factor_test(path_given):
 	global_routes = None
 
 	j = 0
-	simulation_number = 200
+	simulation_number = 10
 	pd_list = []
-	count=10
+	count=14
 	#factor_values = [x for x in range(50, 3050, 50)]
-	#factor_values = [x for x in range(20, 1000, 10)]
+	#factor_values = [x for x in range(20, 400, 10)]
 	
-
-	factor_values = [750]
+	#factor_values = [x for x in range(10, 400, 2)]
+	factor_values = [200]
 	for i in factor_values:
+
 		while j < simulation_number:
 			try:
 				'''
+				#this is used to keep the route same
 				if not global_routes:
 					initial_routes = env.initial_route_random(count, return_dicts=True, min_dist=True)
 					
@@ -758,15 +816,85 @@ def main_factor_test(path_given):
 				initial_routes = env.initial_route_random(count, return_dicts=True, min_dist=True)
 				route_dict = get_route_dict(initial_routes, factor_change=i)
 
+				result_utility = find_average_utility(route_dict)
+
+				#genheatmap(route_dict)
+
+				coverage_value, heatmap_dict_heap, spatial_matrix, global_heatheap, ru = diverse_calculation(route_dict, vis=False)
+
+
+				target_junction_dict = changeRouteTest(route_dict, i, vis=True, to_csv=True,heatmap_dict=heatmap_dict_heap, spatial_matrix=spatial_matrix, global_heatheap=global_heatheap, save_dir=path_given, indiv_vis=False)
+				coverage_value_after, heatmap_dict_heap_after, spatial_matrix, global_heatheap, ru_after = diverse_calculation(target_junction_dict, div_routes="devpathlist")
+
+				new_greedy_dict = find_non_div_route(target_junction_dict, i, vis=False, indiv_vis=False, save_dir=path_given)
+				coverage_value_after_after, heatmap_dict_heap_after_after, spatial_matrix_after, global_heatheap_after, ru_afterafter = diverse_calculation(new_greedy_dict, div_routes="devpathlist")
+
+				pd_list.append([j, i,count,coverage_value,coverage_value_after,coverage_value_after_after, ru, ru_after, ru_afterafter])
+
+
+				logging.info(f"Variable {i} simulation {j} base_cov:{coverage_value} algo_cov:{coverage_value_after} greedy_cov:{coverage_value_after_after}")
+
+				plt.savefig(os.path.join(path_given, f"{i}.png"))
+				logging.info(f"Image {i} saved...")
+				j += 1
+				
+			except Exception as e:
+				print("ERROR ", e)
+				pd.DataFrame(pd_list,columns=["sim", "variable_value","playerNumber","baseCoverage", "ALGOCoverage","greedyCoverage", "baseRU", "algoRU", "greedyRU"]).to_csv(os.path.join(path_given ,"coverageError.csv"))
+				logging.error(f"{traceback.format_exc()} {str(e)}")
+				exit()
+			finally:
+				axs[0].cla()
+				axs[1].cla()
+				axs[2].cla()
+			
+
+		j = 0
+
+	pd.DataFrame(pd_list,columns=["sim", "variable_value","playerNumber","baseCoverage", "ALGOCoverage","greedyCoverage", "baseRU", "algoRU", "greedyRU"]).to_csv(os.path.join(path_given ,"coverage.csv"))
+
+
+def main_inc_player(path_given):
+	global_routes = None
+	j = 0
+	simulation_number = 10
+	pd_list = []
+	count= 200
+	#factor_values = [x for x in range(50, 3050, 50)]
+	#factor_values = [x for x in range(20, 1000, 10)]
+	
+	#factor_values = [x for x in range(10, 400, 2)]
+	factor_values = [x for x in range(2, 40, 2)]
+	for i in factor_values:
+
+
+
+		while j < simulation_number:
+			try:
+				'''
+				if not global_routes:
+					initial_routes = env.initial_route_random(count, return_dicts=True, min_dist=True)
+					
+					global_routes = copy.deepcopy(initial_routes)
+
+					print("Generating Routes.....")
+				else:
+					initial_routes = copy.deepcopy(global_routes)
+					print("Loading Routes.....")
+				'''
+
+				initial_routes = env.initial_route_random(i, return_dicts=True, min_dist=True)
+				route_dict = get_route_dict(initial_routes, factor_change=count)
+
 				#genheatmap(route_dict)
 
 				coverage_value, heatmap_dict_heap, spatial_matrix, global_heatheap = diverse_calculation(route_dict, vis=False)
 
 
-				target_junction_dict = changeRouteTest(route_dict, i, vis=True, to_csv=True,heatmap_dict=heatmap_dict_heap, spatial_matrix=spatial_matrix, global_heatheap=global_heatheap, save_dir=path_given)
+				target_junction_dict = changeRouteTest(route_dict, count, vis=True, to_csv=True,heatmap_dict=heatmap_dict_heap, spatial_matrix=spatial_matrix, global_heatheap=global_heatheap, save_dir=path_given, indiv_vis=False)
 				coverage_value_after, heatmap_dict_heap_after, spatial_matrix, global_heatheap = diverse_calculation(target_junction_dict, div_routes="devpathlist")
 
-				new_greedy_dict = find_non_div_route(target_junction_dict, vis=True)
+				new_greedy_dict = find_non_div_route(target_junction_dict, i, vis=True, indiv_vis=False, save_dir=path_given)
 				coverage_value_after_after, heatmap_dict_heap_after_after, spatial_matrix_after, global_heatheap_after = diverse_calculation(new_greedy_dict, div_routes="devpathlist")
 
 				pd_list.append([j, i,count,coverage_value,coverage_value_after,coverage_value_after_after])
@@ -792,6 +920,7 @@ def main_factor_test(path_given):
 		j = 0
 
 	pd.DataFrame(pd_list,columns=["sim", "variable_value","playerNumber","baseCoverage", "ALGOCoverage","greedyCoverage"]).to_csv(os.path.join(path_given ,"coverage.csv"))
+
 
 
 def main_test():
@@ -843,6 +972,7 @@ if __name__ == "__main__":
 
 	#main()
 	#main_test()
+	#main_inc_player(dir_name)
 	main_factor_test(path_given=dir_name)
 	#test_junctions("104301649", "2584020709")
 	traci.close()

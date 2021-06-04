@@ -149,7 +149,9 @@ class EnvironmentListener(traci.StepListener):
 			json.dump(reward_dict, f)
 
 
-		
+	
+
+
 
 	def initial_route_random(self, amount, return_dicts=False, min_dist=False):
 
@@ -193,7 +195,10 @@ class EnvironmentListener(traci.StepListener):
 				
 				while True:
 					try:
-						start = choice(start_junct_list)
+						if key == 0:
+							start = choice(self.total_list[1])
+						else:	
+							start = choice(start_junct_list)
 						end = choice(self.total_list[key])
 						#end = self.GraphSetting.destination
 

@@ -2,11 +2,135 @@ import os,sys,glob
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 
 from scipy import stats
 
 import seaborn as sns
-sns.set_theme(style="whitegrid")
+#sns.set_theme(style="whitegrid")
+
+
+#sns.set(font='serif', rc={'figure.figsize':(20,8.27)})
+
+sns.set_context("paper")
+
+# Make the background white, and specify the
+# specific font family
+sns.set_style("white", {
+	"font.family": "serif",
+	"font.serif": ["Times", "Palatino", "serif"]
+})
+
+sns.set_style("ticks", {"xtick.major.size": 8, "ytick.major.size": 8})
+
+#mpl.rcParams['axes.color_cycle'] = [ "332288", "88CCEE", "44AA99", "117733", "999933", "DDCC77", "CC6677", "882255", "AA4499"]
+#mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=[ "332288", "88CCEE", "44AA99", "117733", "999933", "DDCC77", "CC6677", "882255", "AA4499"])
+
+def roadutil(data):
+	
+
+	mean_cov = data.groupby(['variable_value']).mean().reset_index()
+
+	baseutil = mean_cov["baseRU"]
+	algoutil = mean_cov["algoRU"]
+	greedyutil = mean_cov["greedyRU"]
+
+
+	mean_cov["dffalgo"] = algoutil - baseutil
+	mean_cov["dffgreedy"] = greedyutil - baseutil
+
+	print(mean_cov)
+
+
+	#plt.plot(mean_cov["variable_value"],mean_cov["dffalgo"], "-", label="ours")
+	#plt.plot(mean_cov["variable_value"], mean_cov["dffgreedy"], "-", label="naive")
+
+	plt.plot(mean_cov["variable_value"],mean_cov["algoRU"], "-", label="LDD")
+	plt.plot(mean_cov["variable_value"], mean_cov["greedyRU"], "-", label="uniform")
+	plt.plot(mean_cov["variable_value"], mean_cov["baseRU"], "-", label="baseline")
+
+	plt.gca().spines['top'].set_visible(False)
+	plt.gca().spines['right'].set_visible(False)
+
+	plt.xlabel('Reward values')
+	plt.ylabel('Road utilization')
+
+	plt.legend(loc="upper left", fontsize=15)
+	plt.savefig(os.path.join(base_save, f'{"resultcomp"}.eps'), dpi=300)
+	plt.savefig(os.path.join(base_save, f'{"resultcomp"}.png'))
+	plt.show()
+
+
+	
+
+def spatialcov(data, average=True):
+	if average:
+		basecov = data["baseCoverage"]
+		algocov = data["ALGOCoverage"]
+		greedycov = data["greedyCoverage"]
+
+		data["dffalgo"] = basecov - algocov
+		data["dffgreedy"] = basecov - greedycov
+
+		data["ALGOCoverage"] = 1/ data["ALGOCoverage"] 
+		data["baseCoverage"] = 1/ data["baseCoverage"]
+		data["greedyCoverage"] = 1/ data["greedyCoverage"]
+		melt_df = pd.melt(data, id_vars=['sim'], value_vars=['ALGOCoverage', 'baseCoverage', "greedyCoverage"])
+		print(melt_df)
+
+		#ax = sns.boxplot(x="variable", y="value", data=melt_df, palette="Set3") #boxplot for 1 factor value
+		#ax= sns.swarmplot(x="variable", y="value", data=melt_df, color=".25")
+
+		#plt.plot(data["sim"], data["dffalgo"], "-o", label="algo") #lineplot fo each sim number
+		#plt.plot(data["sim"], data["dffgreedy"], "-o", label="greedy")
+
+		#plt.plot(data["variable_value"], data["dffalgo"], "-o", label="algo")
+		#plt.plot(data["variable_value"], data["dffgreedy"], "-o", label="greedy")
+
+		'''
+		plt.plot(data["variable_value"], data["ALGOCoverage"], "-o", label="algo")
+		plt.plot(data["variable_value"], data["greedyCoverage"], "-o", label="greedy")
+		plt.plot(data["variable_value"], data["baseCoverage"], "-o", label="base")
+		'''
+
+
+
+
+		mean_cov = data.groupby(['variable_value']).mean().reset_index()
+		print(mean_cov)
+
+
+
+		basecov = mean_cov["baseCoverage"]
+		algocov = mean_cov["ALGOCoverage"]
+		greedycov = mean_cov["greedyCoverage"]
+
+		mean_cov["dffalgo"] = basecov - algocov
+		mean_cov["dffgreedy"] = basecov - greedycov
+
+		#plt.plot(mean_cov["variable_value"],mean_cov["dffalgo"], "-", label="ours")
+		#plt.plot(mean_cov["variable_value"], mean_cov["dffgreedy"], "-", label="naive")
+		plt.plot(mean_cov["variable_value"],mean_cov["ALGOCoverage"], "-", label="LDD", linewidth=3.0)
+		plt.plot(mean_cov["variable_value"], mean_cov["greedyCoverage"], "-", label="uniform", linewidth=3.0)
+		plt.plot(mean_cov["variable_value"], mean_cov["baseCoverage"], "-", label="baseline", linewidth=3.0)
+		plt.gca().spines['top'].set_visible(False)
+		plt.gca().spines['right'].set_visible(False)
+
+		plt.xlabel('Participants')
+		plt.ylabel('Spatial Coverage')
+
+
+		
+
+		plt.legend(loc="lower right", fontsize=13)
+		plt.savefig(os.path.join(base_save, f'{"resultcomp"}.eps'), dpi=300)
+		plt.savefig(os.path.join(base_save, f'{"resultcomp"}.png'))
+		plt.show()
+
+
+
+
+
 
 class T_test(object):
 
@@ -32,43 +156,14 @@ class T_test(object):
 
 
 if __name__ == "__main__":
-	data = pd.read_csv('./savedImages/factor750/coverage.csv')
-	#data = pd.read_csv('./coverage.csv')
-	#data = data.set_index('sim')
+	base_save = './savedImages/inc_player'
 
-	#fig, axs = plt.subplots(2)
+	data = pd.read_csv(os.path.join(base_save,'coverage.csv'))
+	
 
-	basecov = data["baseCoverage"]
-	algocov = data["ALGOCoverage"]
-	greedycov = data["greedyCoverage"]
+	#result = T_test(greedycov, algocov)
+	#result1 = T_test(data["dffalgo"], data["dffgreedy"])
 
-	data["dffalgo"] = basecov - algocov
-	data["dffgreedy"] = basecov - greedycov
+	spatialcov(data)
+	#roadutil(data)
 
-	result = T_test(greedycov, algocov)
-	result1 = T_test(data["dffalgo"], data["dffgreedy"])
-
-	print(result1)
-
-	#plt.plot(data["sim"], basecov.cumsum(), "o", label="base", markersize=2)
-	#plt.plot(data["sim"], algocov.cumsum(), "o", label="ALGO", markersize=2)
-	#plt.plot(data["sim"], greedycov.cumsum(), "o", label="greedy", markersize=2)
-
-	#plt.plot(data["sim"], data["dffalgo"].cumsum(), "o", label="ALGO", markersize=2)
-	#plt.plot(data["sim"], data["dffgreedy"].cumsum(), "o", label="greedy", markersize=2)
-
-	melt_df = pd.melt(data, id_vars=['sim'], value_vars=['ALGOCoverage', 'baseCoverage', "greedyCoverage"])
-	print(melt_df)
-	print(data['greedyCoverage'])
-
-	ax = sns.boxplot(x="variable", y="value", data=melt_df, palette="Set3") #boxplot for 1 factor value
-	ax= sns.swarmplot(x="variable", y="value", data=melt_df, color=".25")
-
-	#plt.plot(data["sim"], data["dffalgo"], "-o", label="algo") #lineplot fo each sim number
-	#plt.plot(data["sim"], data["dffgreedy"], "-o", label="greedy")
-
-	#plt.plot(data["variable_value"], data["dffalgo"], "-o", label="algo")
-	#plt.plot(data["variable_value"], data["dffgreedy"], "-o", label="greedy")
-
-	plt.legend()
-	plt.show()
